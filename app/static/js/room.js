@@ -221,8 +221,18 @@ function setupSocketListeners() {
         
         setPhase('game');
         
-        // Initialize game UI with fresh state
-        initializeGameUI(data.game_type, data.room);
+        // For RPS, emit rps_start event instead of regular game start
+        if (data.game_type === 'rps') {
+            console.log('[RPS] Starting RPS timer game');
+            socketClient.socket.emit('rps_start', {
+                room_id: socketClient.roomId
+            });
+            // Initialize UI
+            initializeGameUI(data.game_type, data.room);
+        } else {
+            // Initialize game UI with fresh state
+            initializeGameUI(data.game_type, data.room);
+        }
     });
 
     socketClient.on('game_move_response', (data) => {
@@ -276,6 +286,53 @@ function setupSocketListeners() {
         console.log('Game switched');
         roomState.currentGame = null;
         setPhase('game_selection');
+    });
+
+    // ========== RPS Timer Events ==========
+    socketClient.on('rps_round_update', (data) => {
+        console.log('[RPS_EVENT] Round update:', data);
+        if (roomState.gameManager?.onRoundUpdate) {
+            roomState.gameManager.onRoundUpdate(data);
+        }
+    });
+
+    socketClient.on('rps_timer_tick', (data) => {
+        console.log(`[RPS_EVENT] Timer tick: ${data.remaining}s`);
+        if (roomState.gameManager?.onTimerTick) {
+            roomState.gameManager.onTimerTick(data);
+        }
+    });
+
+    socketClient.on('rps_player_ready', (data) => {
+        console.log('[RPS_EVENT] Player ready:', data);
+        if (roomState.gameManager?.onPlayerReady) {
+            roomState.gameManager.onPlayerReady(data);
+        }
+    });
+
+    socketClient.on('rps_result', (data) => {
+        console.log('[RPS_EVENT] Result:', data);
+        if (roomState.gameManager?.onResult) {
+            roomState.gameManager.onResult(data);
+        }
+    });
+
+    socketClient.on('rps_choice_response', (data) => {
+        console.log('[RPS_EVENT] Choice response:', data);
+        if (roomState.gameManager?.onChoiceResponse) {
+            roomState.gameManager.onChoiceResponse(data);
+        }
+    });
+
+    socketClient.on('rps_start_response', (data) => {
+        console.log('[RPS_EVENT] Start response:', data);
+        if (data.success) {
+            console.log('[RPS_EVENT] RPS game started successfully');
+            setPhase('game');
+        } else {
+            console.error('[RPS_EVENT] Failed to start RPS:', data.error);
+            alert('Failed to start RPS: ' + data.error);
+        }
     });
 }
 
@@ -369,9 +426,14 @@ function initializeGameUI(gameType, room) {
     // Create game manager
     const GameClass = gameClasses[gameType];
     if (GameClass) {
-        roomState.gameManager = new GameClass();
-        // Pass gameMode to game manager so it can access it for Truth or Dare logic
-        roomState.gameManager.gameMode = roomState.gameMode;
+        // For RPS timer, pass roomState
+        if (gameType === 'rps') {
+            roomState.gameManager = new GameClass(roomState);
+        } else {
+            roomState.gameManager = new GameClass();
+            // Pass gameMode to game manager so it can access it for Truth or Dare logic
+            roomState.gameManager.gameMode = roomState.gameMode;
+        }
         roomState.gameManager.render(container, room.current_game);
     }
 }
