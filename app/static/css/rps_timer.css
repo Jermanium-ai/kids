@@ -1,0 +1,177 @@
+/**
+ * PlaySync - RPS Game Styles (NEW TIMER-BASED UI)
+ */
+
+/* RPS Game Container */
+#game-container {
+    position: relative;
+    width: 100%;
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+/* Timer - Minimal design, top-right corner */
+#rps-timer {
+    font-family: 'Courier New', monospace;
+    font-size: 1.875rem;
+    font-weight: 700;
+    color: #cbd5e1;
+    line-height: 1;
+    min-width: 3rem;
+    text-align: right;
+}
+
+#rps-timer.warning {
+    color: #fbbf24; /* Amber when <= 2 seconds */
+    animation: pulse 0.5s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+/* Choice Buttons */
+.rps-choice-btn {
+    background-color: #475569;
+    border: 2px solid #1e293b;
+    border-radius: 0.5rem;
+    padding: 1rem 0.75rem;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.rps-choice-btn:hover:not(:disabled) {
+    background-color: #64748b;
+    transform: scale(1.05);
+}
+
+.rps-choice-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.rps-choice-btn.ring-2 {
+    border-color: #fbbf24;
+    box-shadow: 0 0 0 2px #fbbf24;
+}
+
+.rps-choice-btn.ring-2.ring-yellow-400 {
+    border-color: #facc15;
+    box-shadow: 0 0 10px rgba(250, 204, 21, 0.5);
+}
+
+.rps-choice-btn .text-4xl {
+    font-size: 2.25rem;
+    line-height: 1;
+}
+
+.rps-choice-btn .text-xs {
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+}
+
+/* Choices Section */
+#rps-choices-section {
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Results Section */
+#rps-results-section {
+    animation: fadeIn 0.4s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+#rps-results-section .text-5xl {
+    font-size: 3rem;
+    line-height: 1;
+    min-height: 3.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Result Text */
+#rps-your-result,
+#rps-opp-result {
+    font-size: 0.875rem;
+    font-weight: 700;
+    min-height: 1.5rem;
+}
+
+#rps-your-result {
+    color: #10b981; /* Green for win/draw */
+}
+
+#rps-your-result.loss {
+    color: #ef4444; /* Red for loss */
+}
+
+/* Scores Display */
+#rps-scores {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    padding: 1rem;
+    background-color: #1e293b;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+}
+
+#rps-your-score,
+#rps-opp-score {
+    font-weight: 700;
+    font-size: 1.25rem;
+    color: #fbbf24;
+}
+
+/* Loading spinner for waiting */
+.rps-loading {
+    display: inline-block;
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid #64748b;
+    border-top-color: #fbbf24;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+    .rps-choice-btn {
+        padding: 0.75rem 0.5rem;
+    }
+
+    .rps-choice-btn .text-4xl {
+        font-size: 1.875rem;
+    }
+
+    #rps-timer {
+        font-size: 1.5rem;
+    }
+
+    #rps-results-section .text-5xl {
+        font-size: 2.5rem;
+    }
+}

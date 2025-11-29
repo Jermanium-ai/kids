@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PlaySync - Game Room</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/anime@3.2.1/lib/anime.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white font-inter">
+    <div id="app" class="min-h-screen flex flex-col">
+        <!-- Top Bar -->
+        <div class="bg-slate-800 bg-opacity-80 backdrop-blur-sm border-b border-slate-700 sticky top-0 z-40">
+            <div class="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
+                <div class="font-poppins font-bold text-teal-400">PlaySync</div>
+                <div class="text-sm text-slate-400">Room: <span id="room-id-display" class="font-mono font-bold text-teal-300">{{ room_id }}</span></div>
+                <button id="leave-room-btn" class="text-xs bg-red-500 hover:bg-red-600 px-3 py-1 rounded transition-colors">
+                    Leave
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col max-w-4xl mx-auto w-full px-4 py-6 space-y-6">
+            <!-- Phase: Waiting for Players -->
+            <div id="phase-waiting" class="space-y-6">
+                <h2 class="text-2xl font-poppins font-bold text-center">Waiting for Players</h2>
+                
+                <!-- Player Slots -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div id="player-slot-1" class="player-slot bg-slate-700 bg-opacity-40 backdrop-blur-sm border-2 border-slate-600 p-6 rounded-xl text-center space-y-3 min-h-32 flex flex-col justify-center items-center">
+                        <div class="text-slate-500 text-sm">Player 1</div>
+                        <div class="w-12 h-12 bg-slate-600 rounded-lg"></div>
+                        <div class="text-slate-400 text-sm">Waiting...</div>
+                    </div>
+                    <div id="player-slot-2" class="player-slot bg-slate-700 bg-opacity-40 backdrop-blur-sm border-2 border-slate-600 p-6 rounded-xl text-center space-y-3 min-h-32 flex flex-col justify-center items-center">
+                        <div class="text-slate-500 text-sm">Player 2</div>
+                        <div class="text-6xl">+</div>
+                        <div class="text-slate-400 text-sm">Empty</div>
+                    </div>
+                </div>
+
+                <!-- Share Section -->
+                <div class="bg-slate-700 bg-opacity-40 backdrop-blur-sm border border-slate-600 p-6 rounded-xl space-y-4">
+                    <h3 class="font-semibold text-center">Share Room Link</h3>
+                    
+                    <!-- QR Code -->
+                    <div class="flex justify-center">
+                        <div id="qr-container" class="bg-white p-2 rounded-lg">
+                            <img id="qr-code" src="{{ qr_code }}" alt="Room QR Code" class="w-32 h-32">
+                        </div>
+                    </div>
+
+                    <!-- Copy Link -->
+                    <div class="flex gap-2">
+                        <input 
+                            type="text" 
+                            id="room-link-input" 
+                            value="{{ request.base_url }}"
+                            readonly
+                            class="flex-1 bg-slate-600 text-white px-3 py-2 rounded-lg text-sm"
+                        >
+                        <button id="copy-link-btn" class="bg-teal-500 hover:bg-teal-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors">
+                            Copy
+                        </button>
+                    </div>
+
+                    <!-- Download QR -->
+                    <button id="download-qr-btn" class="w-full bg-slate-600 hover:bg-slate-500 text-white px-4 py-2 rounded-lg font-semibold transition-colors text-sm">
+                        Download QR Code
+                    </button>
+                </div>
+            </div>
+
+            <!-- Phase: Game Selection -->
+            <div id="phase-game-selection" class="space-y-6 hidden">
+                <h2 class="text-2xl font-poppins font-bold text-center">Choose a Game</h2>
+                
+                <div class="grid grid-cols-1 gap-3">
+                    <button class="game-select-btn bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 p-4 rounded-xl transition-all" data-game="rps">
+                        <div class="font-semibold">Rock Paper Scissors</div>
+                        <div class="text-sm text-purple-200">Best of 3</div>
+                    </button>
+                    <button class="game-select-btn bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 p-4 rounded-xl transition-all" data-game="tictactoe">
+                        <div class="font-semibold">Tic Tac Toe</div>
+                        <div class="text-sm text-blue-200">Classic Strategy</div>
+                    </button>
+                    <button class="game-select-btn bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 p-4 rounded-xl transition-all" data-game="reaction">
+                        <div class="font-semibold">Reaction Time Duel</div>
+                        <div class="text-sm text-orange-200">Lightning Fast</div>
+                    </button>
+                    <button class="game-select-btn bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 p-4 rounded-xl transition-all" data-game="quickmath">
+                        <div class="font-semibold">Quick Math Duel</div>
+                        <div class="text-sm text-green-200">First Correct Wins</div>
+                    </button>
+                    <button class="game-select-btn bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 p-4 rounded-xl transition-all" data-game="would_you_rather">
+                        <div class="font-semibold">Would You Rather</div>
+                        <div class="text-sm text-pink-200">Compare Preferences</div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Phase: Game In Progress -->
+            <div id="phase-game" class="space-y-6 hidden">
+                <div class="flex justify-between items-center">
+                    <h2 id="game-title" class="text-2xl font-poppins font-bold text-center flex-1"></h2>
+                    <button id="change-game-header-btn" class="text-xs bg-slate-600 hover:bg-slate-500 px-3 py-1 rounded transition-colors">
+                        Change Game
+                    </button>
+                </div>
+                
+                <!-- Game Container -->
+                <div id="game-container" class="bg-slate-700 bg-opacity-40 backdrop-blur-sm border border-slate-600 p-6 rounded-xl min-h-64">
+                    <!-- Game-specific content inserted here -->
+                </div>
+
+                <!-- Player Status -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-slate-700 bg-opacity-40 backdrop-blur-sm border border-slate-600 p-4 rounded-lg text-center">
+                        <div id="player1-name" class="font-semibold text-teal-400"></div>
+                        <div id="player1-score" class="text-2xl font-bold mt-2">0</div>
+                    </div>
+                    <div class="bg-slate-700 bg-opacity-40 backdrop-blur-sm border border-slate-600 p-4 rounded-lg text-center">
+                        <div id="player2-name" class="font-semibold text-cyan-400"></div>
+                        <div id="player2-score" class="text-2xl font-bold mt-2">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Phase: Results -->
+            <div id="phase-results" class="space-y-6 hidden">
+                <h2 class="text-2xl font-poppins font-bold text-center">Game Over!</h2>
+                
+                <div class="bg-gradient-to-r from-teal-500 to-cyan-500 bg-opacity-20 border border-teal-500 p-6 rounded-xl text-center space-y-3">
+                    <div class="text-sm text-slate-300">Winner</div>
+                    <div id="winner-name" class="text-3xl font-poppins font-bold"></div>
+                </div>
+
+                <!-- Results Details -->
+                <div id="results-details" class="bg-slate-700 bg-opacity-40 backdrop-blur-sm border border-slate-600 p-6 rounded-xl"></div>
+
+                <!-- Action Buttons -->
+                <div class="grid grid-cols-2 gap-3">
+                    <button id="rematch-btn" class="bg-teal-500 hover:bg-teal-600 text-white font-semibold py-3 rounded-xl transition-colors">
+                        Rematch
+                    </button>
+                    <button id="switch-game-btn" class="bg-slate-700 hover:bg-slate-600 text-white font-semibold py-3 rounded-xl transition-colors border border-slate-600">
+                        Switch Game
+                    </button>
+                </div>
+            </div>
+
+            <!-- Chat Section -->
+            <div id="chat-section" class="bg-slate-700 bg-opacity-40 backdrop-blur-sm border border-slate-600 rounded-xl p-4 hidden">
+                <h3 class="text-sm font-semibold text-slate-400 mb-3">Chat</h3>
+                <div id="chat-messages" class="space-y-2 mb-3 max-h-32 overflow-y-auto"></div>
+                <div class="flex gap-2">
+                    <input 
+                        type="text" 
+                        id="chat-input" 
+                        placeholder="Say something..." 
+                        class="flex-1 bg-slate-600 text-white placeholder-slate-400 px-3 py-2 rounded-lg text-sm"
+                        maxlength="200"
+                    >
+                    <button id="chat-send-btn" class="bg-teal-500 hover:bg-teal-600 text-white px-3 py-2 rounded-lg font-semibold transition-colors text-sm">
+                        Send
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Mode Selection Modal -->
+    <div id="mode-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div class="bg-slate-800 rounded-xl p-8 max-w-md w-full mx-4 space-y-6">
+            <h3 class="text-2xl font-bold text-center">Choose Game Mode</h3>
+            
+            <div class="space-y-4">
+                <button id="mode-simple-btn" class="w-full bg-blue-600 hover:bg-blue-500 p-4 rounded-lg transition-all transform hover:scale-105 text-left">
+                    <div class="font-bold">Simple Mode</div>
+                    <div class="text-sm text-blue-200">Just play and win normally</div>
+                </button>
+                
+                <button id="mode-challenge-btn" class="w-full bg-purple-600 hover:bg-purple-500 p-4 rounded-lg transition-all transform hover:scale-105 text-left">
+                    <div class="font-bold">Challenge Mode</div>
+                    <div class="text-sm text-purple-200">Loser gets Truth or Dare</div>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+    <script src="{{ url_for('static', filename='js/socket-client.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/truth-or-dare.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/rps.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/tictactoe.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/reaction.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/quickmath.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/would-you-rather.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/room.js') }}"></script>
+</body>
+</html>

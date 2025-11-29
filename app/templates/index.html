@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PlaySync - Real-time Multiplayer Games</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/anime@3.2.1/lib/anime.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white font-inter">
+    <div id="app" class="min-h-screen flex flex-col">
+        <!-- Landing Page -->
+        <div id="landing-page" class="flex-1 flex flex-col justify-center items-center px-4 py-8">
+            <div class="w-full max-w-md space-y-8 animate-fade-in">
+                <!-- Header -->
+                <div class="text-center space-y-3">
+                    <div class="text-5xl font-poppins font-bold bg-gradient-to-r from-teal-400 via-teal-500 to-cyan-500 bg-clip-text text-transparent">
+                        PlaySync
+                    </div>
+                    <p class="text-slate-300 text-sm tracking-wide uppercase">
+                        Real-time multiplayer games with friends
+                    </p>
+                </div>
+
+                <!-- CTA Buttons -->
+                <div class="space-y-3">
+                    <!-- Create Room Button -->
+                    <button id="create-room-btn" class="w-full bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white font-semibold py-4 rounded-xl transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-lg">
+                        Create Room
+                    </button>
+
+                    <!-- Join Room Input -->
+                    <div class="space-y-2">
+                        <input 
+                            type="text" 
+                            id="join-room-input" 
+                            placeholder="Enter room code (e.g., ABC123)" 
+                            class="w-full bg-slate-700 text-white placeholder-slate-400 px-4 py-3 rounded-xl border-2 border-slate-600 focus:border-teal-500 focus:outline-none transition-colors uppercase tracking-widest"
+                            maxlength="8"
+                        >
+                        <button id="join-room-btn" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-semibold py-3 rounded-xl transition-all duration-300 border-2 border-slate-600">
+                            Join Room
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Info Cards -->
+                <div class="grid grid-cols-3 gap-2 text-center text-xs">
+                    <div class="bg-slate-700 bg-opacity-40 backdrop-blur-sm p-3 rounded-lg border border-slate-600">
+                        <div class="text-lg font-bold text-teal-400">5</div>
+                        <div class="text-slate-400">Games</div>
+                    </div>
+                    <div class="bg-slate-700 bg-opacity-40 backdrop-blur-sm p-3 rounded-lg border border-slate-600">
+                        <div class="text-lg font-bold text-teal-400">2P</div>
+                        <div class="text-slate-400">Players</div>
+                    </div>
+                    <div class="bg-slate-700 bg-opacity-40 backdrop-blur-sm p-3 rounded-lg border border-slate-600">
+                        <div class="text-lg font-bold text-teal-400">∞</div>
+                        <div class="text-slate-400">Free</div>
+                    </div>
+                </div>
+
+                <!-- Feature List -->
+                <div class="space-y-2 text-sm text-slate-300 border-t border-slate-700 pt-6">
+                    <div class="flex items-center space-x-2">
+                        <span class="text-teal-400">✓</span>
+                        <span>No login required</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span class="text-teal-400">✓</span>
+                        <span>Share link or QR code</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span class="text-teal-400">✓</span>
+                        <span>Real-time multiplayer</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span class="text-teal-400">✓</span>
+                        <span>Rooms expire after 20 minutes idle</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+    <script src="{{ url_for('static', filename='js/socket-client.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/landing.js') }}"></script>
+</body>
+</html>
