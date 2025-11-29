@@ -25,17 +25,16 @@ def create_app(config=None):
     global socketio
     # Use threading async mode for compatibility across all platforms
     # Threading is reliable and works with standard gunicorn sync worker
-    async_mode = 'threading'
     socketio = SocketIO(
         app,
-        cors_allowed_origins="*",
+        async_mode='threading',
+        cors_allowed_origins='*',
         ping_timeout=60,
         ping_interval=25,
-        async_mode=async_mode,
-        # Explicitly allow all transports for better remote connectivity
-        engineio_logger=False,
-        # Enable both WebSocket and polling fallbacks
         transports=['websocket', 'polling'],
+        engineio_logger=False,
+        manage_session=False,  # Allow two tabs from same browser
+        logger=False
     )
     
     # Register blueprints
