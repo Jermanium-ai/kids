@@ -11,10 +11,12 @@ from app.game_logic import create_game_manager
 from app.utils import generate_display_name, get_random_avatar_color
 import uuid
 import time
+import threading
 
 # Track socket to player mapping
 socket_to_player = {}  # {socket_id: player_id}
 player_sockets = {}  # {player_id: socket_id}
+disconnect_timers = {}  # {socket_id: timer_object}
 
 # Chat history (ephemeral, per room)
 chat_history = {}  # {room_id: [messages]}
@@ -22,6 +24,7 @@ chat_history = {}  # {room_id: [messages]}
 @socketio.on('connect')
 def handle_connect():
     """Handle client connection"""
+    print(f"[CONNECT] Client connected: {request.sid}")
     emit('connect_response', {
         'status': 'connected',
         'socket_id': request.sid,
@@ -30,11 +33,44 @@ def handle_connect():
 
 @socketio.on('disconnect')
 def handle_disconnect():
-    """Handle client disconnection"""
-    player_id = socket_to_player.pop(request.sid, None)
+    """Handle client disconnection with safe delayed cleanup"""
+    sid = request.sid
+    player_id = socket_to_player.get(sid)
     
-    if player_id and player_id in player_sockets:
-        del player_sockets[player_id]
+    print(f"[DISCONNECT] Client disconnected: {sid}, player_id: {player_id}")
+    
+    # Cancel any pending disconnect timer for this socket
+    if sid in disconnect_timers:
+        disconnect_timers[sid].cancel()
+        del disconnect_timers[sid]
+    
+    # Schedule delayed cleanup (5 seconds) to verify socket is really gone
+    def delayed_cleanup():
+        # Check if socket has reconnected
+        try:
+            # If socket reconnected, socketio.server.sockets has it
+            if sid in socketio.server.sids:
+                print(f"[DISCONNECT_CLEANUP] Socket {sid} reconnected, keeping player {player_id}")
+                return
+        except:
+            pass
+        
+        # Socket is really gone, cleanup
+        if sid in socket_to_player:
+            player_id_to_remove = socket_to_player.pop(sid)
+            if player_id_to_remove in player_sockets:
+                del player_sockets[player_id_to_remove]
+            print(f"[DISCONNECT_CLEANUP] Cleaned up player {player_id_to_remove} after delayed verification")
+        
+        if sid in disconnect_timers:
+            del disconnect_timers[sid]
+    
+    # Start 5-second delayed cleanup
+    timer = threading.Timer(5.0, delayed_cleanup)
+    disconnect_timers[sid] = timer
+    timer.daemon = True
+    timer.start()
+
 
 @socketio.on('join_room_request')
 def handle_join_room(data):
@@ -420,3 +456,91 @@ def handle_get_chat_history(data):
 def cleanup_rooms():
     """Cleanup expired rooms"""
     room_manager.maybe_cleanup()
+
+
+# ============================================================================
+# RPS TIMER-BASED GAME HANDLERS
+# ============================================================================
+
+# Track RPS timer games
+rps_timers = {}  # {room_id: RPSTimerManager}
+
+@socketio.on('rps_start')
+def handle_rps_start(data):
+    """Start a new RPS timer-based game"""
+    room_id = data.get('room_id', '').upper()
+    player_id = socket_to_player.get(request.sid)
+    
+    print(f"[RPS_START] Received RPS start request for room {room_id}, player {player_id}")
+    
+    room_obj = room_manager.get_room(room_id)
+    if not room_obj:
+        print(f"[RPS_START] Room not found: {room_id}")
+        emit('rps_start_response', {'success': False, 'error': 'Room not found'})
+        return
+    
+    if player_id not in room_obj.players:
+        print(f"[RPS_START] Player not in room")
+        emit('rps_start_response', {'success': False, 'error': 'Not a member of this room'})
+        return
+    
+    if len(room_obj.players) < 2:
+        print(f"[RPS_START] Not enough players: {len(room_obj.players)}")
+        emit('rps_start_response', {'success': False, 'error': 'Need 2 players'})
+        return
+    
+    # Stop any existing RPS timer
+    if room_id in rps_timers:
+        old_timer = rps_timers[room_id]
+        old_timer.stop()
+        del rps_timers[room_id]
+    
+    # Start new RPS timer
+    from app.rps_timer import RPSTimerManager
+    timer = RPSTimerManager(room_obj, socketio, room_id)
+    rps_timers[room_id] = timer
+    timer.start()
+    
+    print(f"[RPS_START] RPS timer started for room {room_id}")
+    emit('rps_start_response', {'success': True})
+
+
+@socketio.on('rps_choice')
+def handle_rps_choice(data):
+    """Submit a choice for RPS timer game"""
+    room_id = data.get('room_id', '').upper()
+    choice = data.get('choice', '')
+    player_id = socket_to_player.get(request.sid)
+    
+    print(f"[RPS_CHOICE] Player {player_id} chose {choice} in room {room_id}")
+    
+    if room_id not in rps_timers:
+        print(f"[RPS_CHOICE] No RPS game in room {room_id}")
+        emit('rps_choice_response', {'success': False, 'error': 'Game not started'})
+        return
+    
+    timer_game = rps_timers[room_id]
+    result = timer_game.submit_choice(player_id, choice)
+    
+    if result['success']:
+        emit('rps_choice_response', {'success': True, 'choice': choice})
+    else:
+        emit('rps_choice_response', {'success': False, 'error': result.get('error')})
+
+
+@socketio.on('rps_stop')
+def handle_rps_stop(data):
+    """Stop RPS game"""
+    room_id = data.get('room_id', '').upper()
+    player_id = socket_to_player.get(request.sid)
+    
+    if room_id not in rps_timers:
+        return
+    
+    timer_game = rps_timers[room_id]
+    timer_game.stop()
+    del rps_timers[room_id]
+    
+    print(f"[RPS_STOP] RPS game stopped for room {room_id}")
+    emit('rps_stopped', {'room_id': room_id}, room=room_id)
+
