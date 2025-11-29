@@ -32,36 +32,39 @@ class SocketClient {
     }
 
     connect() {
-        // Use explicit Socket.IO configuration for better remote connectivity
-        this.socket = io({
-            transports: ['websocket', 'polling'],
+        // Use WebSocket-only for stability
+        console.log('[SOCKET] Connecting with WebSocket transport...');
+        this.socket = io('/', { 
+            transports: ['websocket'],
+            upgrade: false,
             reconnection: true,
             reconnectionDelay: 1000,
             reconnectionDelayMax: 5000,
-            reconnectionAttempts: 5,
-            forceNew: false,
+            reconnectionAttempts: Infinity
         });
 
         this.socket.on('connect', () => {
-            console.log('Connected to server:', this.socket.id);
+            console.log('[SOCKET] Connected:', this.socket.id);
             this.emit('connected');
         });
 
-        this.socket.on('disconnect', () => {
-            console.log('Disconnected from server');
+        this.socket.on('disconnect', (reason) => {
+            console.warn('[SOCKET] Disconnected - reason:', reason);
             this.emit('disconnected');
         });
 
         this.socket.on('connect_error', (error) => {
-            console.error('Socket connection error:', error);
+            console.error('[SOCKET] Connection error:', error);
+            this.emit('connect_error', error);
         });
 
         this.socket.on('reconnect', () => {
-            console.log('Reconnected to server');
+            console.log('[SOCKET] Reconnected');
+            this.emit('reconnected');
         });
 
         this.socket.on('reconnect_attempt', () => {
-            console.log('Attempting to reconnect...');
+            console.log('[SOCKET] Attempting to reconnect...');
         });
 
         // Relay all server events
@@ -79,6 +82,12 @@ class SocketClient {
         this.socket.on('chat_history', (data) => this.emit('chat_history', data));
         this.socket.on('rematch_requested', (data) => this.emit('rematch_requested', data));
         this.socket.on('game_switched', (data) => this.emit('game_switched', data));
+        
+        // RPS-specific events
+        this.socket.on('rps_round_update', (data) => this.emit('rps_round_update', data));
+        this.socket.on('rps_timer_tick', (data) => this.emit('rps_timer_tick', data));
+        this.socket.on('rps_choices_locked', (data) => this.emit('rps_choices_locked', data));
+        this.socket.on('rps_result', (data) => this.emit('rps_result', data));
     }
 
     joinRoom(roomId, displayName, avatarColor) {
